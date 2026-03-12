@@ -27602,6 +27602,76 @@ async function runCmd(command, args, options = {}) {
   });
 }
 
+function normalizeGoReleaserVersion(version) {
+  if (!version || version === 'latest') {
+    return 'latest';
+  }
+  if (version === 'nightly') {
+    return 'nightly';
+  }
+  if (/^v/.test(version)) {
+    return version;
+  }
+  if (/^\d/.test(version)) {
+    return `v${version}`;
+  }
+  return version;
+}
+
+async function resolveLatestGoReleaserTag() {
+  const response = await fetch('https://goreleaser.com/static/releases.json');
+  if (!response.ok) {
+    throw new Error(`failed to resolve latest goreleaser tag: ${response.status}`);
+  }
+  const releases = await response.json();
+  if (!Array.isArray(releases) || releases.length === 0 || !releases[0].tag_name) {
+    throw new Error('invalid releases payload from goreleaser.com/static/releases.json');
+  }
+  return releases[0].tag_name;
+}
+
+function goreleaserFilenameForCurrentPlatform() {
+  let arch;
+  switch (os.arch()) {
+    case 'x64':
+      arch = 'x86_64';
+      break;
+    case 'x32':
+      arch = 'i386';
+      break;
+    case 'arm64':
+      arch = 'arm64';
+      break;
+    case 'arm':
+      arch = 'armv7';
+      break;
+    default:
+      arch = os.arch();
+      break;
+  }
+
+  const platform = os.platform() === 'win32' ? 'Windows' : os.platform() === 'darwin' ? 'Darwin' : 'Linux';
+  const ext = os.platform() === 'win32' ? 'zip' : 'tar.gz';
+  return `goreleaser_${platform}_${arch}.${ext}`;
+}
+
+async function installGoReleaserFromRelease({ version, installDir }) {
+  const requested = normalizeGoReleaserVersion(version);
+  const tag = requested === 'latest' ? await resolveLatestGoReleaserTag() : requested;
+  const filename = goreleaserFilenameForCurrentPlatform();
+  const downloadUrl = `https://github.com/goreleaser/goreleaser/releases/download/${tag}/${filename}`;
+
+  const archivePath = path.join(process.env.RUNNER_TEMP || os.tmpdir(), filename);
+  await runCmd('bash', ['-lc', `set -euo pipefail\ncurl -fL ${JSON.stringify(downloadUrl)} -o ${JSON.stringify(archivePath)}`]);
+
+  if (os.platform() === 'win32') {
+    throw new Error('windows goreleaser fallback install is not supported yet');
+  }
+
+  await runCmd('bash', ['-lc', `set -euo pipefail\ntar -xzf ${JSON.stringify(archivePath)} -C ${JSON.stringify(installDir)}`]);
+  await runCmd('bash', ['-lc', `set -euo pipefail\nchmod +x ${JSON.stringify(path.join(installDir, 'goreleaser'))}`]);
+}
+
 async function ensureGoReleaserInstalled({ version, installUrl }) {
   const existing = await exec.getExecOutput('bash', ['-lc', 'command -v goreleaser'], {
     ignoreReturnCode: true,
@@ -27617,7 +27687,12 @@ async function ensureGoReleaserInstalled({ version, installUrl }) {
   core.addPath(installDir);
 
   const shellScript = `set -euo pipefail\ncurl -fsSL ${JSON.stringify(installUrl)} | bash -s -- -b ${JSON.stringify(installDir)} ${JSON.stringify(version)}`;
-  await runCmd('bash', ['-lc', shellScript]);
+  try {
+    await runCmd('bash', ['-lc', shellScript]);
+  } catch {
+    core.info('GoReleaser script install failed, falling back to release asset download.');
+    await installGoReleaserFromRelease({ version, installDir });
+  }
 
   const installed = await exec.getExecOutput('bash', ['-lc', `test -x ${JSON.stringify(path.join(installDir, 'goreleaser'))} && echo ok`], {
     ignoreReturnCode: true,
@@ -27664,7 +27739,7 @@ async function main() {
     const registry = core.getInput('registry', { required: true });
     const delegateGoreleaser = core.getBooleanInput('delegate-goreleaser');
     const goreleaserVersion = core.getInput('goreleaser-version') || 'latest';
-    const goreleaserInstallUrl = core.getInput('goreleaser-install-url') || 'https://raw.githubusercontent.com/goreleaser/goreleaser/main/scripts/install.sh';
+    const goreleaserInstallUrl = core.getInput('goreleaser-install-url') || 'https://goreleaser.com/static/run';
     const workingDirectoryInput = core.getInput('working-directory') || '.';
     const tinxVersion = core.getInput('tinx-version') || 'v0.1.4';
     const installUrl = core.getInput('install-url') || 'https://raw.githubusercontent.com/sourceplane/tinx/main/install.sh';
