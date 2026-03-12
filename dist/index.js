@@ -27602,6 +27602,33 @@ async function runCmd(command, args, options = {}) {
   });
 }
 
+async function ensureGoReleaserInstalled({ version, installUrl }) {
+  const existing = await exec.getExecOutput('bash', ['-lc', 'command -v goreleaser'], {
+    ignoreReturnCode: true,
+    silent: true
+  });
+
+  if (existing.exitCode === 0 && existing.stdout.trim() !== '') {
+    return;
+  }
+
+  const installDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'goreleaser-bin');
+  await fsp.mkdir(installDir, { recursive: true });
+  core.addPath(installDir);
+
+  const shellScript = `set -euo pipefail\ncurl -fsSL ${JSON.stringify(installUrl)} | bash -s -- -b ${JSON.stringify(installDir)} ${JSON.stringify(version)}`;
+  await runCmd('bash', ['-lc', shellScript]);
+
+  const installed = await exec.getExecOutput('bash', ['-lc', `test -x ${JSON.stringify(path.join(installDir, 'goreleaser'))} && echo ok`], {
+    ignoreReturnCode: true,
+    silent: true
+  });
+
+  if (installed.exitCode !== 0) {
+    throw new Error(`failed to install goreleaser in ${installDir}`);
+  }
+}
+
 async function installTinx({ version, installUrl }) {
   const installDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'tinx-bin');
   await fsp.mkdir(installDir, { recursive: true });
@@ -27636,6 +27663,8 @@ async function main() {
   try {
     const registry = core.getInput('registry', { required: true });
     const delegateGoreleaser = core.getBooleanInput('delegate-goreleaser');
+    const goreleaserVersion = core.getInput('goreleaser-version') || 'latest';
+    const goreleaserInstallUrl = core.getInput('goreleaser-install-url') || 'https://raw.githubusercontent.com/goreleaser/goreleaser/main/scripts/install.sh';
     const workingDirectoryInput = core.getInput('working-directory') || '.';
     const tinxVersion = core.getInput('tinx-version') || 'v0.1.4';
     const installUrl = core.getInput('install-url') || 'https://raw.githubusercontent.com/sourceplane/tinx/main/install.sh';
@@ -27643,6 +27672,13 @@ async function main() {
     const workingDirectory = path.resolve(process.cwd(), workingDirectoryInput);
 
     const tinxBin = await installTinx({ version: tinxVersion, installUrl });
+
+    if (delegateGoreleaser) {
+      await ensureGoReleaserInstalled({
+        version: goreleaserVersion,
+        installUrl: goreleaserInstallUrl
+      });
+    }
 
     await runRelease({
       tinxBin,

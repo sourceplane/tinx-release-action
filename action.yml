@@ -13,6 +13,14 @@ inputs:
     description: "Enable --delegate-goreleaser"
     required: false
     default: "false"
+  goreleaser-version:
+    description: "GoReleaser version to install when delegate-goreleaser is true"
+    required: false
+    default: "latest"
+  goreleaser-install-url:
+    description: "GoReleaser installer script URL"
+    required: false
+    default: "https://raw.githubusercontent.com/goreleaser/goreleaser/main/scripts/install.sh"
   working-directory:
     description: "Working directory used when running tinx release"
     required: false
