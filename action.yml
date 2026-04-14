@@ -1,18 +1,50 @@
 name: "tinx-release-action"
-description: "Run tinx release with OCI push support"
+description: "Run tinx release with the current build, package, and optional push flags"
 author: "sourceplane"
 branding:
   icon: "upload-cloud"
   color: "blue"
 
 inputs:
+  push:
+    description: "OCI target reference for --push (for example ghcr.io/sourceplane/torkflow:v0.0.1)"
+    required: false
   registry:
-    description: "OCI target reference for --push (e.g. ghcr.io/sourceplane/torkflow:v0.0.1)"
-    required: true
+    description: "Deprecated alias for 'push'"
+    required: false
+  manifest:
+    description: "Path to the tinx provider manifest"
+    required: false
+    default: "tinx.yaml"
+  output:
+    description: "Output OCI image layout directory"
+    required: false
+    default: "oci"
+  dist:
+    description: "Build output directory used before packaging"
+    required: false
+    default: "dist"
+  main:
+    description: "Go main package to build"
+    required: false
+  skip-build:
+    description: "Enable --skip-build"
+    required: false
+    default: "false"
+  tag:
+    description: "OCI tag to write into the layout index"
+    required: false
+  plain-http:
+    description: "Enable --plain-http for registry push flows"
+    required: false
+    default: "false"
   delegate-goreleaser:
     description: "Enable --delegate-goreleaser"
     required: false
     default: "false"
+  goreleaser-config:
+    description: "Path to .goreleaser.yml/.yaml when delegation is enabled"
+    required: false
   goreleaser-version:
     description: "GoReleaser version to install when delegate-goreleaser is true"
     required: false
@@ -28,11 +60,15 @@ inputs:
   tinx-version:
     description: "tinx version to install"
     required: false
-    default: "v0.1.4"
+    default: "latest"
   install-url:
     description: "Installer script URL"
     required: false
     default: "https://raw.githubusercontent.com/sourceplane/tinx/main/install.sh"
+
+outputs:
+  tinx-version:
+    description: "Installed tinx version string"
 
 runs:
   using: "node20"

@@ -1,36 +1,78 @@
 # tinx-release-action
 
-Node-based GitHub Action to run `tinx release` with push support.
+Node-based GitHub Action to run the current `tinx release` CLI.
 
-## Inputs
-
-- `registry` (required): OCI target for `--push`, for example `ghcr.io/sourceplane/torkflow:v0.0.1`
-- `delegate-goreleaser` (optional, default `false`): adds `--delegate-goreleaser`
-- `goreleaser-version` (optional, default `latest`): GoReleaser version to install when delegate mode is enabled
-- `goreleaser-install-url` (optional, default `https://goreleaser.com/static/run`): GoReleaser installer script URL
-- `working-directory` (optional, default `.`)
-- `tinx-version` (optional, default `v0.1.4`)
-- `install-url` (optional, default official `install.sh` URL)
+The action installs `tinx`, optionally installs `goreleaser` when delegation is enabled, and forwards the current release flags for build, package, and optional OCI push workflows.
 
 ## Usage
+
+### Build, package, and push
 
 ```yaml
 - uses: sourceplane/tinx-release-action@v1
   with:
-    registry: ghcr.io/sourceplane/torkflow:v0.0.1
+    push: ghcr.io/sourceplane/torkflow:v0.0.1
     delegate-goreleaser: true
 ```
 
 This maps to:
 
 ```bash
-tinx release --delegate-goreleaser --push ghcr.io/sourceplane/torkflow:v0.0.1
+tinx release --manifest tinx.yaml --output oci --dist dist --delegate-goreleaser --push ghcr.io/sourceplane/torkflow:v0.0.1
 ```
 
-When `delegate-goreleaser` is `true`, this action also ensures `goreleaser` is installed before running `tinx release`. If script install fails, it falls back to downloading the release asset directly (similar to `goreleaser-action`).
+### Local package only
 
-When `delegate-goreleaser` is `false`, the command is:
-
-```bash
-tinx release --push ghcr.io/sourceplane/torkflow:v0.0.1
+```yaml
+- uses: sourceplane/tinx-release-action@v1
+  with:
+    manifest: tinx.yaml
+    output: oci
+    dist: dist
 ```
+
+### Custom build inputs
+
+```yaml
+- uses: sourceplane/tinx-release-action@v1
+  with:
+    push: ghcr.io/acme/provider:v1.2.3
+    main: ./cmd/provider
+    tag: v1.2.3
+    delegate-goreleaser: true
+    goreleaser-config: .goreleaser.yaml
+```
+
+## Inputs
+
+| Name | Default | Description |
+|------|---------|-------------|
+| `push` | — | OCI target for `--push`, for example `ghcr.io/sourceplane/torkflow:v0.0.1` |
+| `registry` | — | Deprecated alias for `push` |
+| `manifest` | `tinx.yaml` | Path to the tinx provider manifest |
+| `output` | `oci` | Output OCI image layout directory |
+| `dist` | `dist` | Build output directory used before packaging |
+| `main` | — | Go main package to build |
+| `skip-build` | `false` | Adds `--skip-build` |
+| `tag` | — | OCI tag to write into the layout index |
+| `plain-http` | `false` | Adds `--plain-http` for registry push flows |
+| `delegate-goreleaser` | `false` | Adds `--delegate-goreleaser` |
+| `goreleaser-config` | — | Path to `.goreleaser.yml` or `.goreleaser.yaml` |
+| `goreleaser-version` | `latest` | GoReleaser version to install when delegation is enabled |
+| `goreleaser-install-url` | `https://goreleaser.com/static/run` | GoReleaser installer script URL |
+| `working-directory` | `.` | Working directory used when running `tinx release` |
+| `tinx-version` | `latest` | tinx version to install |
+| `install-url` | official `install.sh` URL | Override for the tinx installer script URL |
+
+## Outputs
+
+| Name | Description |
+|------|-------------|
+| `tinx-version` | Installed tinx version string |
+
+## Notes
+
+- `push` is optional. If you omit it, the action packages into the local OCI layout only.
+- `registry` is still accepted for compatibility, but `push` is the preferred input name.
+- When `delegate-goreleaser` is `true`, the action ensures `goreleaser` is available before invoking `tinx release`.
+- If the GoReleaser install script fails, the action falls back to downloading the release asset directly.

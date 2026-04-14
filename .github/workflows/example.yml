@@ -11,5 +11,5 @@ jobs:
 
       - uses: ./
         with:
-          registry: ghcr.io/sourceplane/torkflow:v0.0.1
+          push: ghcr.io/sourceplane/torkflow:v0.0.1
           delegate-goreleaser: true
