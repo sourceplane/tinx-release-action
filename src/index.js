@@ -92,18 +92,18 @@ async function installGoReleaserFromRelease({ version, installDir }) {
   const downloadUrl = `https://github.com/goreleaser/goreleaser/releases/download/${tag}/${filename}`;
 
   const archivePath = path.join(process.env.RUNNER_TEMP || os.tmpdir(), filename);
-  await runCmd('bash', ['-lc', `set -euo pipefail\ncurl -fL ${JSON.stringify(downloadUrl)} -o ${JSON.stringify(archivePath)}`]);
+  await runCmd('bash', ['-c', `set -euo pipefail\ncurl -fL ${JSON.stringify(downloadUrl)} -o ${JSON.stringify(archivePath)}`]);
 
   if (os.platform() === 'win32') {
     throw new Error('windows goreleaser fallback install is not supported yet');
   }
 
-  await runCmd('bash', ['-lc', `set -euo pipefail\ntar -xzf ${JSON.stringify(archivePath)} -C ${JSON.stringify(installDir)}`]);
-  await runCmd('bash', ['-lc', `set -euo pipefail\nchmod +x ${JSON.stringify(path.join(installDir, 'goreleaser'))}`]);
+  await runCmd('bash', ['-c', `set -euo pipefail\ntar -xzf ${JSON.stringify(archivePath)} -C ${JSON.stringify(installDir)}`]);
+  await runCmd('bash', ['-c', `set -euo pipefail\nchmod +x ${JSON.stringify(path.join(installDir, 'goreleaser'))}`]);
 }
 
 async function ensureGoReleaserInstalled({ version, installUrl }) {
-  const existing = await exec.getExecOutput('bash', ['-lc', 'command -v goreleaser'], {
+  const existing = await exec.getExecOutput('bash', ['-c', 'command -v goreleaser'], {
     ignoreReturnCode: true,
     silent: true,
   });
@@ -117,13 +117,13 @@ async function ensureGoReleaserInstalled({ version, installUrl }) {
 
   const shellScript = `set -euo pipefail\ncurl -fsSL ${JSON.stringify(installUrl)} | bash -s -- -b ${JSON.stringify(installDir)} ${JSON.stringify(version)}`;
   try {
-    await runCmd('bash', ['-lc', shellScript]);
+    await runCmd('bash', ['-c', shellScript]);
   } catch {
     core.info('GoReleaser script install failed, falling back to release asset download.');
     await installGoReleaserFromRelease({ version, installDir });
   }
 
-  const installed = await exec.getExecOutput('bash', ['-lc', `test -x ${JSON.stringify(path.join(installDir, 'goreleaser'))} && echo ok`], {
+  const installed = await exec.getExecOutput('bash', ['-c', `test -x ${JSON.stringify(path.join(installDir, 'goreleaser'))} && echo ok`], {
     ignoreReturnCode: true,
     silent: true,
   });
@@ -141,7 +141,7 @@ async function installTinx({ version, installUrl }) {
   core.addPath(installDir);
 
   const shellScript = `set -euo pipefail\nexport TINX_INSTALL_DIR=${JSON.stringify(installDir)}\nexport TINX_VERSION=${JSON.stringify(version)}\ncurl -fsSL ${JSON.stringify(installUrl)} | bash`;
-  await runCmd('bash', ['-lc', shellScript]);
+  await runCmd('bash', ['-c', shellScript]);
 
   const tinxBin = path.join(installDir, 'tinx');
   await fsp.access(tinxBin, fs.constants.X_OK);

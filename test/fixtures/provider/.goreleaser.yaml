@@ -1,0 +1,7 @@
+project_name: echo-provider
+dist: dist
+
+builds:
+  - id: echo-provider
+    main: ./cmd/echo-provider
+    binary: echo-provider

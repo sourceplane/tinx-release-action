@@ -1,0 +1,13 @@
+apiVersion: tinx.io/v1
+kind: Provider
+metadata:
+  namespace: sourceplane
+  name: echo-provider
+  version: v0.1.0
+spec:
+  runtime: binary
+  entrypoint: echo-provider
+  platforms:
+    - os: linux
+      arch: amd64
+      binary: bin/linux/amd64/echo-provider

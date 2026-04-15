@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ -n "${GORELEASER_TEST_LOG:-}" ]]; then
+  printf 'run %s\n' "$*" >> "$GORELEASER_TEST_LOG"
+fi
