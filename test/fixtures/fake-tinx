@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+log_file="${TINX_TEST_LOG:-}"
+
+log_command() {
+  if [[ -n "$log_file" ]]; then
+    printf '%s\n' "$*" >> "$log_file"
+  fi
+}
+
+log_command "$*"
+
+if [[ "$#" -eq 1 && "$1" == "version" ]]; then
+  echo "tinx test"
+  exit 0
+fi
+
+if [[ "$#" -ge 1 && "$1" == "release" ]]; then
+  shift
+  output="oci"
+  dist="dist"
+  skip_build=false
+
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      --manifest|--main|--tag|--push|--goreleaser-config)
+        shift 2
+        ;;
+      --output)
+        output="$2"
+        shift 2
+        ;;
+      --dist)
+        dist="$2"
+        shift 2
+        ;;
+      --skip-build)
+        skip_build=true
+        shift
+        ;;
+      --plain-http|--delegate-goreleaser)
+        shift
+        ;;
+      *)
+        shift
+        ;;
+    esac
+  done
+
+  mkdir -p "$output"
+  printf '%s\n' "$PWD" > "$output/release-marker.txt"
+  if [[ "$skip_build" != true ]]; then
+    mkdir -p "$dist"
+    printf 'built\n' > "$dist/build-marker.txt"
+  fi
+  exit 0
+fi
+
+echo "unexpected fake tinx invocation: $*" >&2
+exit 1
