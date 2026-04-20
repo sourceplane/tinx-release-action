@@ -1,5 +1,5 @@
-name: "tinx-release-action"
-description: "Run tinx release with the current build, package, and optional push flags"
+name: "kiox-release-action"
+description: "Run kiox release with the current build, package, and optional push flags"
 author: "sourceplane"
 branding:
   icon: "upload-cloud"
@@ -13,9 +13,9 @@ inputs:
     description: "Deprecated alias for 'push'"
     required: false
   manifest:
-    description: "Path to the tinx provider manifest"
+    description: "Path to the kiox provider manifest"
     required: false
-    default: "tinx.yaml"
+    default: "kiox.yaml"
   output:
     description: "Output OCI image layout directory"
     required: false
@@ -54,21 +54,21 @@ inputs:
     required: false
     default: "https://goreleaser.com/static/run"
   working-directory:
-    description: "Working directory used when running tinx release"
+    description: "Working directory used when running kiox release"
     required: false
     default: "."
-  tinx-version:
-    description: "tinx version to install"
+  kiox-version:
+    description: "kiox version to install"
     required: false
     default: "latest"
   install-url:
     description: "Installer script URL"
     required: false
-    default: "https://raw.githubusercontent.com/sourceplane/tinx/main/install.sh"
+    default: "https://raw.githubusercontent.com/sourceplane/kiox/main/install.sh"
 
 outputs:
-  tinx-version:
-    description: "Installed tinx version string"
+  kiox-version:
+    description: "Installed kiox version string"
 
 runs:
   using: "node20"

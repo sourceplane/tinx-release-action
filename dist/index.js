@@ -27721,28 +27721,28 @@ async function ensureGoReleaserInstalled({ version, installUrl }) {
   }
 }
 
-async function installTinx({ version, installUrl }) {
-  const installDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'tinx-bin');
+async function installKiox({ version, installUrl }) {
+  const installDir = path.join(process.env.RUNNER_TEMP || os.tmpdir(), 'kiox-bin');
   await fsp.mkdir(installDir, { recursive: true });
 
-  core.exportVariable('TINX_INSTALL_DIR', installDir);
-  core.exportVariable('TINX_BIN', path.join(installDir, 'tinx'));
+  core.exportVariable('KIOX_INSTALL_DIR', installDir);
+  core.exportVariable('KIOX_BIN', path.join(installDir, 'kiox'));
   core.addPath(installDir);
 
-  const shellScript = `set -euo pipefail\nexport TINX_INSTALL_DIR=${JSON.stringify(installDir)}\nexport TINX_VERSION=${JSON.stringify(version)}\ncurl -fsSL ${JSON.stringify(installUrl)} | bash`;
+  const shellScript = `set -euo pipefail\nexport KIOX_INSTALL_DIR=${JSON.stringify(installDir)}\nexport KIOX_VERSION=${JSON.stringify(version)}\ncurl -fsSL ${JSON.stringify(installUrl)} | bash`;
   await runCmd('bash', ['-c', shellScript]);
 
-  const tinxBin = path.join(installDir, 'tinx');
-  await fsp.access(tinxBin, fs.constants.X_OK);
+  const kioxBin = path.join(installDir, 'kiox');
+  await fsp.access(kioxBin, fs.constants.X_OK);
 
-  const resolvedVersion = await capture(tinxBin, ['version']);
-  core.setOutput('tinx-version', resolvedVersion);
-  core.info(`tinx ${resolvedVersion} installed -> ${tinxBin}`);
-  return tinxBin;
+  const resolvedVersion = await capture(kioxBin, ['version']);
+  core.setOutput('kiox-version', resolvedVersion);
+  core.info(`kiox ${resolvedVersion} installed -> ${kioxBin}`);
+  return kioxBin;
 }
 
 async function runRelease({
-  tinxBin,
+  kioxBin,
   workingDirectory,
   manifest,
   output,
@@ -27788,7 +27788,7 @@ async function runRelease({
     args.push('--goreleaser-config', goreleaserConfig);
   }
 
-  await runCmd(tinxBin, args, { cwd: workingDirectory });
+  await runCmd(kioxBin, args, { cwd: workingDirectory });
 }
 
 async function main() {
@@ -27799,9 +27799,9 @@ async function main() {
     const goreleaserVersion = core.getInput('goreleaser-version') || 'latest';
     const goreleaserInstallUrl = core.getInput('goreleaser-install-url') || 'https://goreleaser.com/static/run';
     const workingDirectoryInput = core.getInput('working-directory') || '.';
-    const tinxVersion = core.getInput('tinx-version') || 'latest';
-    const installUrl = core.getInput('install-url') || 'https://raw.githubusercontent.com/sourceplane/tinx/main/install.sh';
-    const manifest = core.getInput('manifest') || 'tinx.yaml';
+    const kioxVersion = core.getInput('kiox-version') || 'latest';
+    const installUrl = core.getInput('install-url') || 'https://raw.githubusercontent.com/sourceplane/kiox/main/install.sh';
+    const manifest = core.getInput('manifest') || 'kiox.yaml';
     const output = core.getInput('output') || 'oci';
     const dist = core.getInput('dist') || 'dist';
     const mainPackage = core.getInput('main');
@@ -27813,7 +27813,7 @@ async function main() {
     const workingDirectory = path.resolve(process.cwd(), workingDirectoryInput);
     const pushRef = resolvePushRef(push, registry);
 
-    const tinxBin = await installTinx({ version: tinxVersion, installUrl });
+    const kioxBin = await installKiox({ version: kioxVersion, installUrl });
 
     if (delegateGoreleaser && !skipBuild) {
       await ensureGoReleaserInstalled({
@@ -27823,7 +27823,7 @@ async function main() {
     }
 
     await runRelease({
-      tinxBin,
+      kioxBin,
       workingDirectory,
       manifest,
       output,

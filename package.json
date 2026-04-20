@@ -1,8 +1,8 @@
 {
-  "name": "tinx-release-action",
+  "name": "kiox-release-action",
   "version": "1.0.0",
   "private": true,
-  "description": "Node-based GitHub Action for tinx release",
+  "description": "Node-based GitHub Action for kiox release",
   "main": "dist/index.js",
   "scripts": {
     "build": "ncc build src/index.js -o dist"

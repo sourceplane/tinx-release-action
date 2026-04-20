@@ -23,7 +23,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      TINX_TEST_LOG: ${{ github.workspace }}/.test-results/defaults.log
+      KIOX_TEST_LOG: ${{ github.workspace }}/.test-results/defaults.log
     steps:
       - uses: actions/checkout@v4
       - run: mkdir -p .test-results
@@ -31,31 +31,31 @@ jobs:
       - id: action
         uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           working-directory: test/fixtures/provider
 
       - name: Assert default release behavior
         run: |
-          test "${{ steps.action.outputs.tinx-version }}" = "tinx test"
+          test "${{ steps.action.outputs.kiox-version }}" = "kiox test"
           test -f test/fixtures/provider/oci/release-marker.txt
           test -f test/fixtures/provider/dist/build-marker.txt
-          grep -F -- 'release --manifest tinx.yaml --output oci --dist dist' "$TINX_TEST_LOG"
+          grep -F -- 'release --manifest kiox.yaml --output oci --dist dist' "$KIOX_TEST_LOG"
 
   push-with-flags:
     needs: build
     runs-on: ubuntu-latest
     env:
-      TINX_TEST_LOG: ${{ github.workspace }}/.test-results/push-with-flags.log
+      KIOX_TEST_LOG: ${{ github.workspace }}/.test-results/push-with-flags.log
     steps:
       - uses: actions/checkout@v4
       - run: mkdir -p .test-results
 
       - uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           working-directory: test/fixtures/provider
           push: ghcr.io/acme/echo-provider:v1.2.3
-          manifest: tinx.yaml
+          manifest: kiox.yaml
           output: custom-oci
           dist: custom-dist
           main: ./cmd/echo-provider
@@ -67,32 +67,32 @@ jobs:
         run: |
           test -f test/fixtures/provider/custom-oci/release-marker.txt
           test -f test/fixtures/provider/custom-dist/build-marker.txt
-          grep -F -- 'release --manifest tinx.yaml --output custom-oci --dist custom-dist --main ./cmd/echo-provider --tag v1.2.3 --push ghcr.io/acme/echo-provider:v1.2.3 --plain-http --goreleaser-config .goreleaser.yaml' "$TINX_TEST_LOG"
+          grep -F -- 'release --manifest kiox.yaml --output custom-oci --dist custom-dist --main ./cmd/echo-provider --tag v1.2.3 --push ghcr.io/acme/echo-provider:v1.2.3 --plain-http --goreleaser-config .goreleaser.yaml' "$KIOX_TEST_LOG"
 
   registry-alias:
     needs: build
     runs-on: ubuntu-latest
     env:
-      TINX_TEST_LOG: ${{ github.workspace }}/.test-results/registry-alias.log
+      KIOX_TEST_LOG: ${{ github.workspace }}/.test-results/registry-alias.log
     steps:
       - uses: actions/checkout@v4
       - run: mkdir -p .test-results
 
       - uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           working-directory: test/fixtures/provider
           registry: ghcr.io/acme/echo-provider:v9.9.9
 
       - name: Assert registry compatibility alias
         run: |
-          grep -F -- '--push ghcr.io/acme/echo-provider:v9.9.9' "$TINX_TEST_LOG"
+          grep -F -- '--push ghcr.io/acme/echo-provider:v9.9.9' "$KIOX_TEST_LOG"
 
   delegate-goreleaser:
     needs: build
     runs-on: ubuntu-latest
     env:
-      TINX_TEST_LOG: ${{ github.workspace }}/.test-results/delegate-goreleaser.log
+      KIOX_TEST_LOG: ${{ github.workspace }}/.test-results/delegate-goreleaser.log
       GORELEASER_TEST_LOG: ${{ github.workspace }}/.test-results/delegate-goreleaser-install.log
     steps:
       - uses: actions/checkout@v4
@@ -100,7 +100,7 @@ jobs:
 
       - uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           goreleaser-install-url: file://${{ github.workspace }}/test/fixtures/install-goreleaser.sh
           delegate-goreleaser: true
           working-directory: test/fixtures/provider
@@ -108,13 +108,13 @@ jobs:
       - name: Assert goreleaser installation and forwarding
         run: |
           test -s "$GORELEASER_TEST_LOG"
-          grep -F -- '--delegate-goreleaser' "$TINX_TEST_LOG"
+          grep -F -- '--delegate-goreleaser' "$KIOX_TEST_LOG"
 
   skip-build-skips-goreleaser-install:
     needs: build
     runs-on: ubuntu-latest
     env:
-      TINX_TEST_LOG: ${{ github.workspace }}/.test-results/skip-build.log
+      KIOX_TEST_LOG: ${{ github.workspace }}/.test-results/skip-build.log
       GORELEASER_TEST_LOG: ${{ github.workspace }}/.test-results/skip-build-goreleaser.log
     steps:
       - uses: actions/checkout@v4
@@ -122,7 +122,7 @@ jobs:
 
       - uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           goreleaser-install-url: file://${{ github.workspace }}/test/fixtures/fail-goreleaser-install.sh
           delegate-goreleaser: true
           skip-build: true
@@ -133,7 +133,7 @@ jobs:
           test -f test/fixtures/provider/oci/release-marker.txt
           test ! -f test/fixtures/provider/dist/build-marker.txt
           test ! -s "$GORELEASER_TEST_LOG"
-          grep -F -- '--skip-build --delegate-goreleaser' "$TINX_TEST_LOG"
+          grep -F -- '--skip-build --delegate-goreleaser' "$KIOX_TEST_LOG"
 
   conflicting-push-inputs:
     needs: build
@@ -145,7 +145,7 @@ jobs:
         continue-on-error: true
         uses: ./
         with:
-          install-url: file://${{ github.workspace }}/test/fixtures/install-tinx.sh
+          install-url: file://${{ github.workspace }}/test/fixtures/install-kiox.sh
           push: ghcr.io/acme/echo-provider:v1.0.0
           registry: ghcr.io/acme/echo-provider:v2.0.0
 

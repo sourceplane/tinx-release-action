@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-log_file="${TINX_TEST_LOG:-}"
+log_file="${KIOX_TEST_LOG:-}"
 
 log_command() {
   if [[ -n "$log_file" ]]; then
@@ -12,7 +12,7 @@ log_command() {
 log_command "$*"
 
 if [[ "$#" -eq 1 && "$1" == "version" ]]; then
-  echo "tinx test"
+  echo "kiox test"
   exit 0
 fi
 
@@ -57,5 +57,5 @@ if [[ "$#" -ge 1 && "$1" == "release" ]]; then
   exit 0
 fi
 
-echo "unexpected fake tinx invocation: $*" >&2
+echo "unexpected fake kiox invocation: $*" >&2
 exit 1
