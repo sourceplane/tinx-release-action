@@ -58,13 +58,11 @@ inputs:
     required: false
     default: "."
   kiox-version:
-    description: "kiox version to install"
+    description: "kiox version to install; when omitted or set to latest, the action resolves the latest published kiox release tag"
     required: false
-    default: "latest"
   install-url:
-    description: "Installer script URL"
+    description: "Installer script URL; when omitted, the action uses install.sh from the resolved kiox tag"
     required: false
-    default: "https://raw.githubusercontent.com/sourceplane/kiox/main/install.sh"
 
 outputs:
   kiox-version:

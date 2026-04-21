@@ -27594,6 +27594,8 @@ const fsp = __nccwpck_require__(1455);
 const path = __nccwpck_require__(6760);
 const os = __nccwpck_require__(8161);
 
+const defaultKioxRepo = 'sourceplane/kiox';
+
 async function runCmd(command, args, options = {}) {
   await exec.exec(command, args, {
     failOnStdErr: false,
@@ -27609,6 +27611,44 @@ async function capture(command, args, options = {}) {
     ...options,
   });
   return result.stdout.trim();
+}
+
+function githubRequestHeaders() {
+  const headers = { accept: 'application/vnd.github+json' };
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (token) {
+    headers.authorization = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+async function resolveLatestKioxReleaseTag(repo = defaultKioxRepo) {
+  const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`, {
+    headers: githubRequestHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error(`failed to resolve latest kiox release tag for ${repo}: ${response.status}`);
+  }
+  const release = await response.json();
+  const tag = typeof release?.tag_name === 'string' ? release.tag_name.trim() : '';
+  if (!tag) {
+    throw new Error(`latest release response for ${repo} did not include tag_name`);
+  }
+  return tag;
+}
+
+async function resolveKioxVersion(versionInput, repo = defaultKioxRepo) {
+  const requested = (versionInput || '').trim();
+  if (requested && requested !== 'latest') {
+    return requested;
+  }
+  const resolved = await resolveLatestKioxReleaseTag(repo);
+  core.info(`Resolved kiox version ${resolved}`);
+  return resolved;
+}
+
+function defaultInstallUrlForVersion(version, repo = defaultKioxRepo) {
+  return `https://raw.githubusercontent.com/${repo}/${version}/install.sh`;
 }
 
 function normalizeGoReleaserVersion(version) {
@@ -27799,8 +27839,8 @@ async function main() {
     const goreleaserVersion = core.getInput('goreleaser-version') || 'latest';
     const goreleaserInstallUrl = core.getInput('goreleaser-install-url') || 'https://goreleaser.com/static/run';
     const workingDirectoryInput = core.getInput('working-directory') || '.';
-    const kioxVersion = core.getInput('kiox-version') || 'latest';
-    const installUrl = core.getInput('install-url') || 'https://raw.githubusercontent.com/sourceplane/kiox/main/install.sh';
+    const kioxVersion = await resolveKioxVersion(core.getInput('kiox-version'));
+    const installUrl = core.getInput('install-url') || defaultInstallUrlForVersion(kioxVersion);
     const manifest = core.getInput('manifest') || 'kiox.yaml';
     const output = core.getInput('output') || 'oci';
     const dist = core.getInput('dist') || 'dist';
