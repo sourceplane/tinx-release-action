@@ -61,8 +61,8 @@ kiox release --manifest kiox.yaml --output oci --dist dist --delegate-goreleaser
 | `goreleaser-version` | `latest` | GoReleaser version to install when delegation is enabled |
 | `goreleaser-install-url` | `https://goreleaser.com/static/run` | GoReleaser installer script URL |
 | `working-directory` | `.` | Working directory used when running `kiox release` |
-| `kiox-version` | `latest` | kiox version to install |
-| `install-url` | official `install.sh` URL | Override for the kiox installer script URL |
+| `kiox-version` | — | kiox version to install; when omitted or set to `latest`, the action resolves the latest published kiox release tag |
+| `install-url` | — | Override for the kiox installer script URL; when omitted, the action uses `install.sh` from the resolved kiox tag |
 
 ## Outputs
 
@@ -74,5 +74,6 @@ kiox release --manifest kiox.yaml --output oci --dist dist --delegate-goreleaser
 
 - `push` is optional. If you omit it, the action packages into the local OCI layout only.
 - `registry` is still accepted for compatibility, but `push` is the preferred input name.
+- When `kiox-version` is omitted, the action resolves the latest published kiox release tag and installs from that exact tag.
 - When `delegate-goreleaser` is `true`, the action ensures `goreleaser` is available before invoking `kiox release`.
 - If the GoReleaser install script fails, the action falls back to downloading the release asset directly.
